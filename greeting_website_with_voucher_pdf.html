@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Вітальний Ваучер - FASTRACK</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;0,900;1,900&family=Space+Grotesk:wght@700;900&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #030712;
+            color: #f3f4f6;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .font-impact-style {
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: -0.04em;
+        }
+
+        /* Glassmorphism style for blocks */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(6, 182, 212, 0.25);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(6, 182, 212, 0.15);
+        }
+
+        /* Outline text effect for neon theme */
+        .text-outline-stroke {
+            -webkit-text-stroke: 1.5px rgba(6, 182, 212, 0.8);
+            color: transparent;
+        }
+
+        @media (min-width: 640px) {
+            .text-outline-stroke {
+                -webkit-text-stroke: 2px rgba(6, 182, 212, 0.9);
+            }
+        }
+
+        /* Animated background lights */
+        @keyframes floatGlow1 {
+            0%, 100% { transform: translate(0px, 0px) scale(1); opacity: 0.4; }
+            50% { transform: translate(60px, 40px) scale(1.25); opacity: 0.7; }
+        }
+
+        @keyframes floatGlow2 {
+            0%, 100% { transform: translate(0px, 0px) scale(1); opacity: 0.5; }
+            50% { transform: translate(-50px, -50px) scale(1.3); opacity: 0.8; }
+        }
+
+        @keyframes floatGlow3 {
+            0%, 100% { transform: translate(0px, 0px) scale(1); opacity: 0.3; }
+            50% { transform: translate(40px, -40px) scale(1.2); opacity: 0.6; }
+        }
+
+        .glow-blob-1 { animation: floatGlow1 8s ease-in-out infinite; }
+        .glow-blob-2 { animation: floatGlow2 10s ease-in-out infinite; }
+        .glow-blob-3 { animation: floatGlow3 12s ease-in-out infinite; }
+
+        /* Animated gradient text & borders */
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .animated-gradient-text {
+            background: linear-gradient(135deg, #22d3ee, #a855f7, #ec4899, #3b82f6);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientMove 6s ease infinite;
+        }
+
+        .animated-gradient-btn {
+            background: linear-gradient(135deg, #06b6d4, #8b5cf6, #d946ef);
+            background-size: 200% 200%;
+            animation: gradientMove 4s ease infinite;
+        }
+
+        /* Diagonal Racing Finish Line Banner from Top Right to Bottom Left */
+        .racing-finish-banner {
+            position: fixed;
+            top: -20vh;
+            right: -20vw;
+            width: 160vw;
+            height: 120px;
+            transform: rotate(-28deg);
+            transform-origin: top right;
+            background-image: 
+                linear-gradient(45deg, #000 25%, transparent 25%), 
+                linear-gradient(-45deg, #000 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #000 75%), 
+                linear-gradient(-45deg, transparent 75%, #000 75%);
+            background-size: 32px 32px;
+            background-position: 0 0, 0 16px, 16px -16px, -16px 0px;
+            background-color: #ffffff;
+            opacity: 0.18;
+            box-shadow: 0 0 35px rgba(6, 182, 212, 0.6), 0 0 70px rgba(168, 85, 247, 0.4);
+            pointer-events: none;
+            z-index: 0;
+            border-top: 3px solid #06b6d4;
+            border-bottom: 3px solid #ec4899;
+        }
+
+        /* Racing speed line animation on canvas */
+        #racing-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Perspective tilt wrapper for 3D parallax */
+        .perspective-container {
+            perspective: 1200px;
+        }
+
+        .tilt-card {
+            transition: transform 0.15s ease-out;
+            transform-style: preserve-3d;
+        }
+
+        /* Hidden PDF container placed off-screen */
+        #pdf-hidden-container {
+            position: absolute;
+            left: -9999px;
+            top: -9999px;
+            width: 780px;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-between p-3 sm:p-6 md:p-10 relative overflow-x-hidden">
+
+    <!-- Diagonal Finish Line Pattern Stripe -->
+    <div class="racing-finish-banner"></div>
+
+    <!-- Interactive Neon Racing Speed Lines & Particles Canvas -->
+    <canvas id="racing-canvas"></canvas>
+
+    <!-- Dynamic Animated Background Lights -->
+    <div id="glow-1" class="fixed top-10 left-10 sm:-top-20 sm:-left-20 w-72 h-72 sm:w-96 sm:h-96 bg-cyan-500/30 rounded-full blur-3xl pointer-events-none glow-blob-1 transition-transform duration-300"></div>
+    <div id="glow-2" class="fixed bottom-10 right-10 sm:-bottom-20 sm:-right-20 w-80 h-80 sm:w-[28rem] sm:h-[28rem] bg-purple-600/35 rounded-full blur-3xl pointer-events-none glow-blob-2 transition-transform duration-300"></div>
+    <div id="glow-3" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 sm:w-96 sm:h-96 bg-pink-500/20 rounded-full blur-3xl pointer-events-none glow-blob-3 transition-transform duration-300"></div>
+
+    <!-- Mobile Header Section -->
+    <header class="w-full max-w-2xl text-center mt-2 mb-4 sm:my-6 z-10">
+        <div class="inline-flex items-center gap-2 bg-slate-900/90 border border-cyan-500/40 text-cyan-300 font-extrabold text-xs px-4 py-1.5 rounded-full uppercase tracking-wider mb-3 shadow-lg shadow-cyan-500/20">
+            <i class="fa-solid fa-flag-checkered text-pink-400"></i> Подарунок від друга Васі
+        </div>
+        <h1 class="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight font-impact-style uppercase animated-gradient-text leading-none drop-shadow-lg">
+            З Днем Народження!
+        </h1>
+        <p class="mt-2.5 text-slate-300 text-xs sm:text-base max-w-lg mx-auto font-medium px-2">
+            Вася підготував для тебе незабутній драйв! Готуйся тиснути газ до відмови! 🏎️⚡
+        </p>
+    </header>
+
+    <!-- Main Content Container with Perspective Parallax -->
+    <main class="w-full max-w-2xl flex flex-col items-center gap-5 sm:gap-8 my-2 z-10 perspective-container">
+
+        <!-- Action Card & Greeting Message -->
+        <div class="w-full glass-panel rounded-2xl sm:rounded-3xl p-4 sm:p-7 flex flex-col items-center text-center gap-4">
+            <div class="space-y-2">
+                <h2 class="text-lg sm:text-2xl font-black text-white flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-bolt text-cyan-400 animate-pulse"></i> Твій незабутній подарунок
+                </h2>
+                <p class="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-xl">
+                    «Друже, вітаю! Бажаю зашкалюючого адреналіну та нових перемог! Тримай ваучер на **3 заїзди на картінгу FASTRACK** — час виявити найшвидшого!»
+                </p>
+                <div class="pt-1">
+                    <span class="inline-block bg-purple-950/80 text-purple-300 border border-purple-500/40 font-bold text-xs px-3.5 py-1 rounded-lg shadow-sm">
+                        — Твій друг Вася 🔥
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Download Button -->
+            <button id="download-btn" onclick="generatePDF()" class="w-full animated-gradient-btn text-white font-black text-base sm:text-lg py-3.5 sm:py-4 px-6 rounded-xl sm:rounded-2xl shadow-xl shadow-cyan-500/25 active:scale-95 transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer border border-white/20 shrink-0">
+                <i class="fa-solid fa-file-pdf text-xl sm:text-2xl"></i>
+                <span>Завантажити PDF</span>
+            </button>
+        </div>
+
+        <!-- Single Display Voucher with Interactive Tilt Effect -->
+        <div class="w-full flex flex-col items-center">
+            
+            <div class="flex items-center justify-between w-full mb-2.5 px-1 text-xs">
+                <span class="font-bold text-cyan-400 tracking-wider flex items-center gap-1.5 text-[11px] sm:text-xs uppercase">
+                    <i class="fa-solid fa-ticket text-pink-500"></i> Електронний ваучер
+                </span>
+                <span class="bg-slate-900 border border-purple-500/50 text-cyan-300 px-2.5 py-0.5 rounded font-mono text-[11px] font-bold shadow-sm">
+                    KOD: 9PZZL-HDNS4F
+                </span>
+            </div>
+
+            <!-- Single Mobile-Responsive Neon Voucher Card -->
+            <div id="voucher-display-card" class="tilt-card w-full bg-slate-900/90 text-slate-100 rounded-2xl shadow-2xl overflow-hidden border border-cyan-500/40 p-4 sm:p-8 relative backdrop-blur-xl">
+                
+                <!-- Inner Animated Gradient Accent Line -->
+                <div class="absolute top-0 left-0 right-0 h-1.5 animated-gradient-btn shadow-[0_0_12px_rgba(6,182,212,0.8)]"></div>
+
+                <!-- Header Typography Stack -->
+                <div class="leading-none mb-4 sm:mb-6 select-none text-left">
+                    <div class="text-4xl sm:text-6xl md:text-7xl font-black font-impact-style tracking-tighter text-outline-stroke uppercase opacity-30">
+                        VOUCHER
+                    </div>
+                    <div class="text-4xl sm:text-6xl md:text-7xl font-black font-impact-style tracking-tighter text-outline-stroke uppercase opacity-60 -mt-2.5 sm:-mt-4">
+                        VOUCHER
+                    </div>
+                    <div class="text-4xl sm:text-6xl md:text-7xl font-black font-impact-style tracking-tighter text-cyan-400 uppercase -mt-2.5 sm:-mt-4 drop-shadow-[0_0_15px_rgba(6,182,212,0.5)]">
+                        VOUCHER
+                    </div>
+                </div>
+
+                <!-- Sender Badge -->
+                <div class="bg-slate-950/80 border-l-4 border-cyan-400 p-2.5 sm:p-3.5 mb-4 rounded-r-lg border-y border-r border-slate-800">
+                    <p class="text-[11px] sm:text-xs font-black text-cyan-300 uppercase flex items-center gap-1.5">
+                        <i class="fa-solid fa-flag-checkered text-pink-500"></i> Подарунок від друга Васі
+                    </p>
+                    <p class="text-[10px] sm:text-xs text-slate-400 italic mt-0.5">
+                        "З Днем Народження! Покажи найкращий час на трасі!"
+                    </p>
+                </div>
+
+                <!-- Voucher Info Section -->
+                <div class="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center border-t border-b border-slate-800 py-5 my-2">
+                    
+                    <!-- QR Code Container -->
+                    <div class="w-full sm:w-auto flex flex-col items-center justify-center bg-white p-3 rounded-xl border-2 border-cyan-400 shadow-lg shadow-cyan-500/20 shrink-0">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=9PZZL-HDNS4F" alt="Voucher QR Code" class="w-28 h-28 sm:w-36 sm:h-36 object-contain">
+                        <span class="text-[9px] font-extrabold tracking-widest text-slate-800 uppercase mt-1.5">FASTRACK KARTING</span>
+                    </div>
+
+                    <!-- Voucher Description & Code -->
+                    <div class="w-full space-y-3 text-center sm:text-left">
+                        <div>
+                            <h3 class="text-lg sm:text-2xl font-black uppercase tracking-tight text-white leading-tight">
+                                NA 3 PRZEJAZDY GOKARTEM SENIOR
+                            </h3>
+                            <p class="text-xs sm:text-sm font-bold text-cyan-400 tracking-wide uppercase mt-1">
+                                NA TORZE KARTINGOWYM FASTRACK
+                            </p>
+                        </div>
+
+                        <!-- Code Box -->
+                        <div class="bg-slate-950 border border-purple-500/40 p-3 sm:p-4 rounded-xl shadow-inner">
+                            <p class="text-[9px] sm:text-[10px] font-bold tracking-wider uppercase text-slate-400">
+                                KOD TWOJEGO VOUCHERA DO REZERWACJI
+                            </p>
+                            <p class="text-xl sm:text-2xl font-mono font-black tracking-widest text-pink-400 mt-0.5 drop-shadow-[0_0_10px_rgba(236,72,153,0.5)]">
+                                9PZZL-HDNS4F
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Terms & Location -->
+                <div class="mt-4 text-left text-[10px] sm:text-xs text-slate-300 space-y-2 font-medium">
+                    <p class="flex items-start gap-1.5 font-bold text-slate-200">
+                        <i class="fa-solid fa-location-dot text-pink-500 mt-0.5 shrink-0"></i>
+                        <span>VOUCHER MOŻNA ZREALIZOWAĆ STACJONARNIE NA RECEPCJI TORU KARTINGOWEGO FASTRACK</span>
+                    </p>
+                    <p class="text-slate-400 font-mono text-[10px] pl-4">
+                        Pleszewska 1/Piętro +3, 61-136 Poznań
+                    </p>
+                    <div class="flex flex-col sm:flex-row justify-between items-center border-t border-slate-800 pt-2.5 text-[10px] text-slate-400 gap-1.5 text-center sm:text-left">
+                        <p class="font-bold text-slate-200 uppercase">
+                            <i class="fa-regular fa-clock text-cyan-400 mr-1"></i> WAŻNY JEST ROK OD DATY ZAKUPU
+                        </p>
+                        <p class="font-black tracking-widest text-slate-200">
+                            FASTRACK | <span class="text-cyan-400">WWW.FASTRACK.PL</span>
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Off-screen Layout Engine for generating Landscape Neon PDF Voucher -->
+    <div id="pdf-hidden-container">
+        <div id="voucher-pdf-template" style="background: #0f172a; padding: 30px; font-family: 'Montserrat', sans-serif; color: #f8fafc; border: 3px solid #06b6d4;">
+            <div style="line-height: 0.85; margin-bottom: 15px;">
+                <div style="font-size: 50px; font-weight: 900; font-family: 'Space Grotesk', sans-serif; -webkit-text-stroke: 2px #06b6d4; color: transparent; text-transform: uppercase; opacity: 0.35;">
+                    VOUCHER
+                </div>
+                <div style="font-size: 50px; font-weight: 900; font-family: 'Space Grotesk', sans-serif; -webkit-text-stroke: 2px #06b6d4; color: transparent; text-transform: uppercase; opacity: 0.65; margin-top: -15px;">
+                    VOUCHER
+                </div>
+                <div style="font-size: 50px; font-weight: 900; font-family: 'Space Grotesk', sans-serif; color: #22d3ee; text-transform: uppercase; margin-top: -15px;">
+                    VOUCHER
+                </div>
+            </div>
+
+            <div style="background-color: #020617; border-left: 4px solid #ec4899; padding: 10px 14px; margin-bottom: 15px; border-radius: 4px; border-top: 1px solid #1e293b; border-right: 1px solid #1e293b; border-bottom: 1px solid #1e293b;">
+                <p style="font-size: 11px; font-weight: 800; color: #67e8f9; margin: 0; text-transform: uppercase;">
+                    🎁 Подарунок від друга Васі
+                </p>
+                <p style="font-size: 10px; font-weight: 500; color: #94a3b8; margin: 2px 0 0 0; font-style: italic;">
+                    "З Днем Народження! Покажи найкращий час на трасі!"
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 20px; align-items: center; border-top: 2px solid #334155; border-bottom: 2px solid #334155; padding: 20px 0; margin: 15px 0;">
+                <div style="width: 150px; text-align: center; background-color: #ffffff; padding: 10px; border: 2px solid #06b6d4; border-radius: 8px;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=9PZZL-HDNS4F" style="width: 130px; height: 130px; display: block; margin: 0 auto;">
+                    <div style="font-size: 8px; font-weight: bold; margin-top: 6px; letter-spacing: 1px; color: #0f172a; text-transform: uppercase;">
+                        FASTRACK KARTING
+                    </div>
+                </div>
+
+                <div style="flex: 1;">
+                    <h2 style="font-size: 20px; font-weight: 900; text-transform: uppercase; margin: 0 0 4px 0; line-height: 1.2; color: #ffffff;">
+                        NA 3 PRZEJAZDY GOKARTEM SENIOR
+                    </h2>
+                    <p style="font-size: 12px; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin: 0 0 14px 0;">
+                        NA TORZE KARTINGOWYM FASTRACK
+                    </p>
+
+                    <div style="background-color: #020617; border: 1px solid #a855f7; padding: 10px 14px; border-radius: 8px;">
+                        <div style="font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #94a3b8; text-transform: uppercase;">
+                            KOD TWOJEGO VOUCHERA DO REZERWACJI PRZEJAZDU/ÓW
+                        </div>
+                        <div style="font-size: 22px; font-family: monospace; font-weight: 900; letter-spacing: 3px; color: #f472b6; margin-top: 2px;">
+                            9PZZL-HDNS4F
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="font-size: 10px; color: #cbd5e1; line-height: 1.4; font-weight: 600;">
+                <p style="margin: 0 0 2px 0; text-transform: uppercase; font-weight: 700; color: #f8fafc;">
+                    VOUCHER MOŻNA ZREALIZOWAĆ STACJONARNIE NA RECEPCJI TORU KARTINGOWEGO FASTRACK
+                </p>
+                <p style="margin: 0 0 10px 0; color: #94a3b8;">
+                    Pleszewska 1/Piętro +3, 61-136 Poznań
+                </p>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #334155; padding-top: 8px; font-size: 9px;">
+                    <span style="font-weight: 800; text-transform: uppercase; color: #f8fafc;">
+                        VOUCHER WAŻNY JEST ROK OD DATY ZAKUPU
+                    </span>
+                    <span style="font-weight: 900; text-transform: uppercase; color: #f8fafc;">
+                        FASTRACK | <span style="color: #22d3ee;">WWW.FASTRACK.PL</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="w-full text-center text-slate-500 text-[11px] sm:text-xs my-4 z-10">
+        Зроблено з любов'ю ❤️ | Яскравих заїздів!
+    </footer>
+
+    <!-- Logic for Parallax, Racing Canvas Particles & PDF Download -->
+    <script>
+        // --- RACING NEON CANVAS ANIMATION ---
+        const canvas = document.getElementById('racing-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Animated neon speed streaks
+        const lines = [];
+        const LINE_COUNT = 35;
+        const colors = ['#06b6d4', '#a855f7', '#ec4899', '#3b82f6'];
+
+        for (let i = 0; i < LINE_COUNT; i++) {
+            lines.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                length: Math.random() * 100 + 60,
+                speed: Math.random() * 6 + 3,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                width: Math.random() * 2.5 + 1
+            });
+        }
+
+        function drawRacingLines() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            lines.forEach(line => {
+                ctx.beginPath();
+                const gradient = ctx.createLinearGradient(line.x, line.y, line.x, line.y + line.length);
+                gradient.addColorStop(0, 'transparent');
+                gradient.addColorStop(0.5, line.color);
+                gradient.addColorStop(1, 'transparent');
+
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = line.width;
+                ctx.moveTo(line.x, line.y);
+                ctx.lineTo(line.x, line.y + line.length);
+                ctx.stroke();
+
+                line.y += line.speed;
+                if (line.y > canvas.height) {
+                    line.y = -line.length;
+                    line.x = Math.random() * canvas.width;
+                }
+            });
+
+            requestAnimationFrame(drawRacingLines);
+        }
+        drawRacingLines();
+
+        // --- 3D PARALLAX & TILT EFFECT ---
+        const tiltCard = document.getElementById('voucher-display-card');
+        const glow1 = document.getElementById('glow-1');
+        const glow2 = document.getElementById('glow-2');
+
+        function applyTilt(x, y) {
+            const tiltX = (y - 0.5) * -18;
+            const tiltY = (x - 0.5) * 18;
+
+            tiltCard.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+            
+            const moveX = (x - 0.5) * 40;
+            const moveY = (y - 0.5) * 40;
+            glow1.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            glow2.style.transform = `translate(${-moveX}px, ${-moveY}px)`;
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            applyTilt(x, y);
+        });
+
+        window.addEventListener('deviceorientation', (e) => {
+            if (e.beta && e.gamma) {
+                const x = (e.gamma + 45) / 90;
+                const y = (e.beta - 20) / 90;
+                applyTilt(Math.max(0, Math.min(1, x)), Math.max(0, Math.min(1, y)));
+            }
+        });
+
+        window.addEventListener('mouseleave', () => {
+            tiltCard.style.transform = `rotateX(0deg) rotateY(0deg)`;
+            glow1.style.transform = `translate(0px, 0px)`;
+            glow2.style.transform = `translate(0px, 0px)`;
+        });
+
+        // Trigger celebratory confetti when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            const count = 140;
+            const defaults = { origin: { y: 0.7 } };
+
+            function fire(particleRatio, opts) {
+                confetti(Object.assign({}, defaults, opts, {
+                    particleCount: Math.floor(count * particleRatio)
+                }));
+            }
+
+            fire(0.25, { spread: 26, startVelocity: 45, colors: ['#06b6d4', '#a855f7', '#ec4899'] });
+            fire(0.2, { spread: 60, colors: ['#3b82f6', '#f43f5e', '#10b981'] });
+            fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+            fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+        });
+
+        // Function to generate and download PDF
+        function generatePDF() {
+            const downloadBtn = document.getElementById('download-btn');
+            
+            const originalBtnHTML = downloadBtn.innerHTML;
+            downloadBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xl"></i> <span>Створення PDF...</span>`;
+            downloadBtn.disabled = true;
+
+            const element = document.getElementById('voucher-pdf-template');
+            
+            const opt = {
+                margin:       [0.2, 0.2, 0.2, 0.2],
+                filename:     'FASTRACK_Voucher_9PZZL-HDNS4F.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                downloadBtn.innerHTML = `<i class="fa-solid fa-circle-check text-xl text-green-300"></i> <span>Завантажено!</span>`;
+                
+                confetti({
+                    particleCount: 100,
+                    spread: 80,
+                    origin: { y: 0.6 },
+                    colors: ['#06b6d4', '#a855f7', '#ec4899', '#f59e0b']
+                });
+
+                setTimeout(() => {
+                    downloadBtn.innerHTML = originalBtnHTML;
+                    downloadBtn.disabled = false;
+                }, 3000);
+            }).catch(err => {
+                console.error("Помилка генерації PDF:", err);
+                downloadBtn.innerHTML = originalBtnHTML;
+                downloadBtn.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>
